@@ -1,0 +1,11 @@
+# Config for src/CausalGPT/tests/ExDBN_perform.py
+# CLI args override these values.
+
+# Input CSV path
+data_path: /Users/xiaoyuhe/Datasets/Asia/asia_250_0.csv
+
+# Constraint file path (default requested)
+anc_path: /Users/xiaoyuhe/EXDBN-LLM/ExDBN-DNN/reports/test_ancs.anc
+
+# Output directory for generated CSV results
+out_dir: /Users/xiaoyuhe/EXDBN-LLM/ExDBN-DNN/reports

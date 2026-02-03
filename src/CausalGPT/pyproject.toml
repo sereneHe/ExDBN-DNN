@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "causalgpt"
+version = "0.0.0"
+description = "Local CausalGPT package (subproject)"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy",
+  "pandas",
+  "gurobipy",
+  "scipy",
+  "igraph",
+  "omegaconf",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[dependency-groups]
+dev = ["pytest"]
+dnn = [
+  "torch",
+]
+viz = [
+  "matplotlib",
+  "networkx",
+]
+
+[tool.setuptools]
+# Treat THIS directory as the Python package named `CausalGPT`.
+package-dir = {"CausalGPT" = "."}
+packages = ["CausalGPT"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
