@@ -12,12 +12,15 @@ The main runnable entrypoints live under `src/CausalGPT/`.
 
 ## Quickstart (macOS)
 
-### 1) Use the Python 3.11 venv (recommended)
+### 1) Create an environment
 
-We keep a local venv under `src/CausalGPT/.venv`.
+Recommended: Python 3.11/3.12.
 
 ```bash
-cd /Users/xiaoyuhe/EXDBN-LLM/ExDBN-DNN/src/CausalGPT
+cd ExDBN-DNN
+
+# Option A: use your own venv (recommended)
+python3 -m venv .venv
 source .venv/bin/activate
 
 # editable install (so imports work)
@@ -32,14 +35,142 @@ Notes:
 - Python 3.13 often breaks torch; this repo is set up to work with **Python 3.11/3.12**.
 - You still need a working **Gurobi license** to run the EXDBN MILP stage.
 
-### 2) Run CoDiet experiment
+### 2) Run CoDiet experiment (EXDBN → `.anc` → DNN)
 
 ```bash
-cd /Users/xiaoyuhe/EXDBN-LLM/ExDBN-DNN/src/CausalGPT
-bash Test_codiet.sh
+cd ExDBN-DNN/src/CausalGPT
+bash tests/Test_codiet.sh
 ```
 
 This script drives `tests/ExDBN_perform.py` against `codiet_302_*.csv` replicates.
+
+## 运行指南 (step-by-step)
+
+Below is a more explicit “checklist-style” guide (useful if you want to run individual pieces).
+
+### 0) Enter the runner folder
+
+```bash
+cd ExDBN-DNN/src/CausalGPT
+```
+
+### 1) Create + activate a venv
+
+You can do this at repo root (`ExDBN-DNN/`) or inside `src/CausalGPT/`. A common pattern:
+
+```bash
+cd ExDBN-DNN
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -e .
+```
+
+Alternative (if you prefer requirements files):
+
+```bash
+cd ExDBN-DNN
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+```
+
+### 2) (Optional) Adjust EXDBN hyperparams in the external EXDBN repo
+
+If you are using the external EXDBN implementation under this workspace (e.g. `Causal-Methods/bestdagsolverintheworld-main/`), you may want to adjust its YAML hyperparameters (for example, `max_features`, `mipgap`, `time_limit`, etc.).
+
+Where that YAML lives depends on the EXDBN repo version you cloned. Find it inside the EXDBN repo under something like:
+
+- `.../experiments_conf/exdbn_hyperparams.yaml`
+
+### 3) Run EXDBN → `.anc` → DNN (limited features)
+
+This is the recommended “fast-ish” run.
+
+```bash
+cd ExDBN-DNN/src/CausalGPT
+
+# example knobs
+export EXDBN_TIME_LIMIT=120
+export EXDBN_TARGET_MIP_GAP=0.10
+export DEGREE=1
+export EXDBN_MAX_FEATURES=15
+
+bash tests/Test_codiet.sh
+```
+
+### 4) Run EXDBN → `.anc` → DNN (all features)
+
+This can be much slower and heavier.
+
+```bash
+cd ExDBN-DNN/src/CausalGPT
+export EXDBN_MAX_FEATURES=
+bash tests/Test_codiet_with_all_features.sh
+```
+
+### 5) (Optional) EXDBN → NanoChat pipeline smoke test
+
+Use this when you want to validate the “EXDBN priors → NanoChat consumes priors → write a hard `.anc`” code path.
+
+If you do not have real NanoChat artifacts yet, you can generate dummy ones:
+
+```bash
+cd ExDBN-DNN
+
+# writes: reports/tmp_sanity/dummy_ckpt.pt + reports/tmp_sanity/vocab.txt
+python -m CausalGPT.utils.make_vocab_gpt4style dummy-assets \
+	--out_ckpt reports/tmp_sanity/dummy_ckpt.pt \
+	--out_vocab reports/tmp_sanity/vocab.txt \
+	--vocab_size 64
+```
+
+Then run the pipeline script:
+
+```bash
+cd ExDBN-DNN/src/CausalGPT
+
+# simplest: run on one CSV directly
+SINGLE_DATA_CSV=/Users/xiaoyuhe/Datasets/CoDiet/data/codiet_302_0.csv \
+	bash tests/Run_codiet_exdbn_to_nanochat.sh
+```
+
+Notes:
+
+- The script will automatically pick up `ExDBN-DNN/reports/tmp_sanity/{dummy_ckpt.pt,vocab.txt}` if present.
+- For strict vocab sanity checks against `.anc` node tokens, set `NANOCHAT_SANITY_STRICT=1` (default for non-dummy runs).
+
+### 6) (Optional) nanochat / constr-nanochat scripts
+
+These scripts clone external repos into `~/.cache/nanochat/...` and create a `.venv` inside that checkout.
+
+Smoke-check (default on macOS):
+
+```bash
+cd ExDBN-DNN/src/CausalGPT
+bash tests/vanilla_sft.sh
+bash tests/constr_sft.sh
+bash tests/tok_pre_mid_d20.sh
+```
+
+Full training (can take a long time; requires proper torch/CUDA setup):
+
+```bash
+cd ExDBN-DNN/src/CausalGPT
+RUN_FULL=1 bash tests/tok_pre_mid_d20.sh
+```
+
+To generate EXDBN `.anc` inside `tok_pre_mid_d20.sh` and pass it into constrained SFT:
+
+```bash
+cd ExDBN-DNN/src/CausalGPT
+
+RUN_EXDBN_ANC=1 \
+EXDBN_DATA_CSV=/Users/xiaoyuhe/Datasets/CoDiet/data/codiet_302_0.csv \
+EXDBN_ANC_OUT=~/.cache/nanochat/exdbn_priors/ExDBN_LLM.anc \
+RUN_CONSTR_SFT=1 \
+RUN_FULL=1 \
+	bash tests/tok_pre_mid_d20.sh
+```
 
 ## What gets written (important outputs)
 
@@ -62,30 +193,46 @@ The `arcs{ ... }` file contains three kinds of constraints (as written by `Causa
 
 In the current DNN stage, `CausalGPT.utils.dnn_constraints_utils.parse_anc_file` treats lines with `->` as **forbidden edges**.
 
-## LLM priors (variable-name → priors)
+## nanochat integration (optional)
 
-If you want an LLM to look at **variable names** and propose causal priors, use:
+This repo does **not** vendor karpathy/nanochat (or constrained forks). Instead, the helper scripts under `src/CausalGPT/tests/` will:
 
-- `CausalGPT.utils.llm_prior_cli`
+- clone the relevant nanochat repo into `~/.cache/nanochat/...`
+- create a `.venv` inside that checkout using `uv`
+- run the requested `python -m nanochat.*` / `python -m scripts.*` entrypoints
 
-Example (Ollama, OpenAI-compatible):
+Scripts:
 
-```bash
-cd /Users/xiaoyuhe/EXDBN-LLM/ExDBN-DNN/src/CausalGPT
-python -m CausalGPT.utils.llm_prior_cli \
-	--csv /path/to/your.csv \
-	--provider ollama \
-	--base_url http://localhost:11434 \
-	--model llama3.1
-```
+- `src/CausalGPT/tests/vanilla_sft.sh`: bootstrap upstream nanochat and (by default on macOS) do a smoke-check. Set `RUN_FULL=1` to run training.
+- `src/CausalGPT/tests/constr_sft.sh`: bootstrap `andrewklayk/constr-nanochat` and run constrained SFT (smoke-check on macOS unless `RUN_FULL=1`).
+- `src/CausalGPT/tests/tok_pre_mid_d20.sh`: tokenizer + pretrain + mid-train “speedrun” (smoke-check on macOS unless `RUN_FULL=1`).
 
-This prints `--ancs="[...]"` and `--forb_ancs="[...]"` strings you can pass to the runner.
-It also caches the JSON response next to the CSV by default.
+### Feeding EXDBN `.anc` into constrained SFT
+
+`tok_pre_mid_d20.sh` can optionally generate an EXDBN priors file and then pass it into constrained SFT (requires a fork that provides `scripts.chat_sft_constr`).
+
+Key env vars:
+
+- `RUN_EXDBN_ANC=1`: enable EXDBN `.anc` generation
+- `EXDBN_DATA_CSV=/path/to.csv`: input CSV for EXDBN
+- `EXDBN_ANC_OUT=~/.cache/nanochat/exdbn_priors/ExDBN_LLM.anc`: output `.anc` path
+- `RUN_CONSTR_SFT=1`: after mid-train, run constrained SFT and pass `--anc $EXDBN_ANC_OUT`
+
+Note: The constrained fork does not (currently) have a standard `--anc` flag upstream; we carry a patch in `src/CausalGPT/tests/patches/` and the shell scripts attempt to apply it automatically inside the cloned checkout.
+
+## Where nanochat outputs go
+
+The nanochat scripts write under `NANOCHAT_BASE_DIR` (default in our scripts: `~/.cache/nanochat`). Common subdirectories:
+
+- `~/.cache/nanochat/report/` (generated markdown sections + final `report.md`, also copied to the current working directory of the nanochat checkout)
+- `~/.cache/nanochat/base_checkpoints/`, `~/.cache/nanochat/mid_checkpoints/`, `~/.cache/nanochat/chatsft_checkpoints/`
+- `~/.cache/nanochat/tokenized_data/`
+
+You can override with `export NANOCHAT_BASE_DIR=/some/path` before running the scripts.
 
 ## Repo map
 
 - `src/CausalGPT/tests/ExDBN_perform.py`: main end-to-end runner (EXDBN → constraints → DNN → outputs)
 - `src/CausalGPT/exdbn_ban_edges.py`: EXDBN call + constraint writer utilities
 - `src/CausalGPT/utils/dnn_constraints_utils.py`: DNN stage (nanoGPT-style transformer) + `.anc` parser
-- `src/CausalGPT/utils/llm_prior.py`: OpenAI-compatible LLM prior querying + caching
-- `src/CausalGPT/utils/llm_prior_cli.py`: small CLI for generating priors from CSV headers
+- `src/CausalGPT/run_exdbn_to_nanochat.py`: helper to run EXDBN priors into a constrained nanochat generator and write a hard `.anc`

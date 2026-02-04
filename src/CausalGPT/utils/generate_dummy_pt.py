@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 
-from CausalGPT.make_vocab_gpt4style import dummy_assets_cli
+from CausalGPT.utils.make_vocab_gpt4style import dummy_assets_cli
 """
 生成一个 dummy .pt checkpoint 和一个对应的 vocab.txt
 """
