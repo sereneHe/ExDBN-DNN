@@ -10,6 +10,77 @@ This folder contains a runnable pipeline for:
 
 The main runnable entrypoints live under `src/CausalGPT/`.
 
+## Project structure
+
+The project uses Cookiecutter-style layout and is based on a Machine Learning Operations template.
+
+```txt
+├── .dvc                      # Data Version Control
+│   ├── cache
+│   ├── tmp
+│   ├── config
+│   └── config.local
+├── .github/                  # Github actions
+│   └── workflows/
+│       ├── evaluation.yaml
+│       ├── linting.yaml
+│       └── tests.yaml
+├── .secrets/
+│   └── gcp-key.json          # GCP service account key (to be added by user)
+├── .venv/                    # Virtual environment (to be added by user)
+├── configs/
+├── data/                     # Data directory
+│   ├── processed
+│   └── raw
+├── dockerfiles/              # Dockerfiles
+│   ├── api.dockerfile
+│   ├── api_requirements.txt
+│   ├── dvc.dockerfile
+│   ├── streamlit.dockerfile
+│   └── streamlit_requirements.txt
+├── models/                   # Trained models
+├── outputs/
+├── reports/                  # Reports
+│   └── figures/
+├── scripts/                  # Helper scritpt for testing
+├── src/                      # Source code
+│   ├── mlo_group_project/
+│   │   ├──config/            # Configuration files
+│   │   ├──styles/            # Streamlit styles
+│   │   ├──training/          # Training scripts
+│   │   ├── __init__.py
+│   │   ├── api.py
+│   │   ├── data.py
+│   │   ├── evaluate.py
+│   │   ├── guardrails.py
+│   │   ├── model.py
+│   │   ├── streamlit_app.py
+│   │   ├── train.py
+│   │   └── visualize.py
+└── tests/                    # Tests
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── sample_data.pt        # Sample data for tests (to be added automatically when tests are run)
+│   ├── test_data.py
+│   └── test_model.py
+├── wandb/                    # Weights & Biases files
+├── .dvcignore
+├── .env                      # Environment variables (to be added by user)
+├── .gcloudignore
+├── .gitignore
+├── .pre-commit-config.yaml
+├── cloudbuild_api.yaml           # Google Cloud Build file
+├── cloudbuild_stramlit_app.yaml  # Google Cloud Build file
+├── docker-compose.yml            # Docker compose file
+├── dvc.lock                      # DVC lock file
+├── pyproject.toml            # Python project file
+├── README.md                 # Project README
+├── requirements.txt          # Project requirements
+├── requirements_dev.txt      # Project development requirements
+├── tasks.py                  # Project invoke tasks
+└── uv.lock                   # uv lock file
+```
+
 ## Quickstart (macOS)
 
 ### 1) Create an environment
