@@ -1,0 +1,43 @@
+diff --git a/scripts/chat_sft_constr.py b/scripts/chat_sft_constr.py
+--- a/scripts/chat_sft_constr.py
++++ b/scripts/chat_sft_constr.py
+@@
++parser.add_argument(
++    "--anc",
++    type=str,
++    default=None,
++    help="Path to a .anc file to inject into every training conversation as an extra system message",
++)
+ args = parser.parse_args()
+ user_config = vars(args).copy()
+ # -----------------------------------------------------------------------------
+@@
+ engine = Engine(model, tokenizer) # will be used for inline model evaluation only
++
++anc_text = None
++if args.anc:
++    with open(args.anc, "r", encoding="utf-8") as f:
++        anc_text = f.read().strip()
++    if not anc_text:
++        anc_text = None
++
++def inject_anc_system_message(doc, anc_text):
++    if not anc_text:
++        return doc
++    system_msg = {
++        "role": "system",
++        "content": "EXDBN constraints (.anc):\n" + anc_text,
++    }
++    if isinstance(doc, dict) and isinstance(doc.get("messages"), list):
++        new_doc = dict(doc)
++        new_doc["messages"] = [system_msg] + list(doc["messages"])
++        return new_doc
++    if isinstance(doc, list):
++        return [system_msg] + list(doc)
++    return {"messages": [system_msg, {"role": "user", "content": str(doc)}]}
+@@
+-            doc = dataset[i]
+-            ids, mask = tokenizer.render_conversation(doc)
++            doc = dataset[i]
++            doc = inject_anc_system_message(doc, anc_text)
++            ids, mask = tokenizer.render_conversation(doc)

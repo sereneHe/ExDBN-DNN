@@ -1,65 +1,44 @@
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
+@torch.inference_mode()
+def generate_with_priors(self, tokens, max_tokens, vocab_dict, anc_text,
+                         temperature=1.0, top_k=None, seed=42):
+    """
+    Autoregressive generation with .anc priors applied in real-time.
+    """
+    device = self.get_device()
+    rng = None
+    if temperature > 0:
+        rng = torch.Generator(device=device)
+        rng.manual_seed(seed)
 
-def parse_anc_file(anc_path, n):
-    mask = np.zeros((n, n), dtype=int)
-    with open(anc_path, "r") as f:
-        for line in f:
-            if "->" in line:
-                parts = line.strip().replace(';','').replace('}','').split()
-                if len(parts) >= 3:
-                    i, j = int(parts[0]), int(parts[2])
-                    mask[i, j] = 1
-    return mask
+    ids = torch.tensor([tokens], dtype=torch.long, device=device)  # (1, T)
+    token_priors = parse_anc_arcs(anc_text, vocab_dict)
 
-class DeepDNN(nn.Module):
-    def __init__(self, n):
-        super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(n, 128),
-            nn.ReLU(),
-            nn.Linear(128, 128),
-            nn.ReLU(),
-            nn.Linear(128, 64),
-            nn.ReLU(),
-            nn.Linear(64, n),
-            nn.Sigmoid()
-        )
-    def forward(self, x):
-        return self.net(x)
+    for _ in range(max_tokens):
+        logits = self.forward(ids)[:, -1, :]  # (1, vocab_size)
 
-def train_dnn_with_constraints(n, mask, epochs=300):
-    model = DeepDNN(n)
-    optimizer = optim.Adam(model.parameters(), lr=0.01)
-    for epoch in range(epochs):
-        x = torch.eye(n)
-        pred = model(x)
-        pred = pred * (1 - torch.tensor(mask, dtype=torch.float32))
-        # 这里loss可自定义，假设我们希望输出接近0（无结构），仅作演示
-        loss = pred.sum()
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-    return (pred.detach().numpy() > 0.5).astype(int)
+        # 1️⃣ Apply hard banned tokens
+        for tp in token_priors:
+            if tp["type"] == "banned":
+                logits[:, tp["token_id"]] = -float("inf")
 
-if __name__ == "__main__":
-    n = 5
-    mask = parse_anc_file("../../test_ancs.anc", n)
-    adj_dnn = train_dnn_with_constraints(n, mask, epochs=300)
-    print("DNN结构预测：\n", adj_dnn)
+        # 2️⃣ Apply soft replace/prior
+        for tp in token_priors:
+            if tp["type"] == "replace":
+                # "increase probability of token_id2 over token_id1"
+                logits[:, tp["token_id2"]] += tp["weight"]
+                logits[:, tp["token_id1"]] -= tp["weight"]
 
-    # 假设 exdbn 结构如下（实际应为 exdbn 推断结果）
-    adj_exdbn = np.random.randint(0, 2, (n, n))
-    np.fill_diagonal(adj_exdbn, 0)
+        # 3️⃣ Top-k filtering
+        if top_k is not None:
+            v, _ = torch.topk(logits, min(top_k, logits.size(-1)))
+            logits[logits < v[:, [-1]]] = -float('inf')
 
-    # 评估
-    try:
-        from exdbn_ban_edges import evaluate_exdbn_constraints
-        anc = [(0, 1), (2, 3)]
-        forb_anc = [(1, 2)]
-        print("exdbn 满足约束数：", evaluate_exdbn_constraints(adj_exdbn, anc, forb_anc))
-        print("exdbn+DNN 满足约束数：", evaluate_exdbn_constraints(adj_dnn, anc, forb_anc))
-    except ImportError:
-        print("请确保 exdbn_ban_edges.py 中有 evaluate_exdbn_constraints 函数并在 PYTHONPATH 下可用。")
+        # 4️⃣ Sampling
+        if temperature > 0:
+            probs = F.softmax(logits / temperature, dim=-1)
+            next_ids = torch.multinomial(probs, num_samples=1, generator=rng)
+        else:
+            next_ids = torch.argmax(logits, dim=-1, keepdim=True)
+
+        ids = torch.cat((ids, next_ids), dim=1)
+        yield next_ids.item()

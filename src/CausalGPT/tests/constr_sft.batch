@@ -1,0 +1,12 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --gres=gpu:2
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=4
+#SBATCH --time=02:00:00 
+#SBATCH --output=constr_sft.out
+#SBATCH --partition=h200fast,h200
+ml Rust/1.88.0-GCCcore-14.3.0
+srun echo "'Starting'"
+srun hostname
+srun bash runs/constr_sft.sh

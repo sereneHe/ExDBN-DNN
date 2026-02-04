@@ -1,0 +1,11 @@
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --gres=gpu:2
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=8
+#SBATCH --output=mid_20.out
+#SBATCH --partition=h200
+ml Rust/1.88.0-GCCcore-14.3.0
+srun echo "'Starting'"
+srun hostname
+srun bash tok_pre_mid_d20.sh

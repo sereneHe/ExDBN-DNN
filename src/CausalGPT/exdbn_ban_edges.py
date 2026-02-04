@@ -157,6 +157,7 @@ def predict_exdbn_adjacency_from_npz(
     *,
     sample_size: int,
     max_degree: int = 5,
+    tabu_edges: list[tuple[int, int]] | None = None,
 ) -> tuple[np.ndarray, dict]:
     """Run EXDBN (MILP) and return a binary predicted adjacency matrix.
 
@@ -187,6 +188,7 @@ def predict_exdbn_adjacency_from_npz(
         w_threshold=0,
         Y=[],
         B_ref=B_ref,
+        tabu_edges=tabu_edges,
         max_in_degree=max_degree,
         max_out_degree=max_degree,
     )
@@ -211,6 +213,7 @@ def predict_exdbn_adjacency_from_csv(
     max_degree: int = 5,
     skiprows: int = 1,
     delimiter: str = ",",
+    tabu_edges: list[tuple[int, int]] | None = None,
 ) -> tuple[np.ndarray, dict]:
     """Run EXDBN (MILP) on a CSV dataset and return binary predicted adjacency."""
     _configure_gurobi_from_env()
@@ -234,6 +237,7 @@ def predict_exdbn_adjacency_from_csv(
         w_threshold=0,
         Y=[],
         B_ref=[],
+        tabu_edges=tabu_edges,
         max_in_degree=max_degree,
         max_out_degree=max_degree,
     )
