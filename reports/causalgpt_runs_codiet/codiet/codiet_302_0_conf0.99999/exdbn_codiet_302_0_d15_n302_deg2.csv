@@ -1,0 +1,2 @@
+dataset,features,samples,degree,runtime_seconds,gap,fdr,tpr,fpr,shd,nnz,precision,f1score,g_score
+codiet_302_0,15,302,2,0.6936419010162354,0.0011542015899841573,,,,,0,,,

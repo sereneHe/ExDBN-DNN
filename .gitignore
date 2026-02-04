@@ -1,9 +1,6 @@
 docs/site/
 
-# Generated outputs (keep only placeholders)
-reports/**
-!reports/.gitkeep
-!reports/figures/.gitkeep
+# NOTE: reports/ is tracked (not ignored) per repo preference.
 
 # test cache
 manual_test/
@@ -153,6 +150,9 @@ venv.bak/
 
 # Local backups
 src/CausalGPT/.venv_py313_bak/
+
+# Do not version control the archived copy of old code/tests.
+src/CausalGPT/backup/
 
 # Spyder project settings
 .spyderproject
