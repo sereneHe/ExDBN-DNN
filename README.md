@@ -12,74 +12,46 @@ The main runnable entrypoints live under `src/CausalGPT/`.
 
 ## Project structure
 
-The project uses Cookiecutter-style layout and is based on a Machine Learning Operations template.
+This is the actual repo structure (high-level) as it exists in this workspace:
 
 ```txt
-├── .dvc                      # Data Version Control
-│   ├── cache
-│   ├── tmp
-│   ├── config
-│   └── config.local
-├── .github/                  # Github actions
-│   └── workflows/
-│       ├── evaluation.yaml
-│       ├── linting.yaml
-│       └── tests.yaml
-├── .secrets/
-│   └── gcp-key.json          # GCP service account key (to be added by user)
-├── .venv/                    # Virtual environment (to be added by user)
-├── configs/
-├── data/                     # Data directory
-│   ├── processed
-│   └── raw
-├── dockerfiles/              # Dockerfiles
-│   ├── api.dockerfile
-│   ├── api_requirements.txt
-│   ├── dvc.dockerfile
-│   ├── streamlit.dockerfile
-│   └── streamlit_requirements.txt
-├── models/                   # Trained models
-├── outputs/
-├── reports/                  # Reports
-│   └── figures/
-├── scripts/                  # Helper scritpt for testing
-├── src/                      # Source code
-│   ├── mlo_group_project/
-│   │   ├──config/            # Configuration files
-│   │   ├──styles/            # Streamlit styles
-│   │   ├──training/          # Training scripts
-│   │   ├── __init__.py
-│   │   ├── api.py
-│   │   ├── data.py
-│   │   ├── evaluate.py
-│   │   ├── guardrails.py
-│   │   ├── model.py
-│   │   ├── streamlit_app.py
-│   │   ├── train.py
-│   │   └── visualize.py
-└── tests/                    # Tests
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── sample_data.pt        # Sample data for tests (to be added automatically when tests are run)
-│   ├── test_data.py
-│   └── test_model.py
-├── wandb/                    # Weights & Biases files
-├── .dvcignore
-├── .env                      # Environment variables (to be added by user)
-├── .gcloudignore
+ExDBN-DNN/
+├── AGENTS.md
+├── LICENSE
+├── README.md
+├── pyproject.toml
+├── requirements.txt
+├── uv.lock
 ├── .gitignore
-├── .pre-commit-config.yaml
-├── cloudbuild_api.yaml           # Google Cloud Build file
-├── cloudbuild_stramlit_app.yaml  # Google Cloud Build file
-├── docker-compose.yml            # Docker compose file
-├── dvc.lock                      # DVC lock file
-├── pyproject.toml            # Python project file
-├── README.md                 # Project README
-├── requirements.txt          # Project requirements
-├── requirements_dev.txt      # Project development requirements
-├── tasks.py                  # Project invoke tasks
-└── uv.lock                   # uv lock file
-```
+├── .python-version
+├── .venv/                    # local virtualenv (optional)
+├── .pytest_cache/            # local pytest cache (optional)
+├── reports/                  # outputs + helper artifacts
+│   ├── causalgpt_runs_codiet/
+│   ├── figures/
+│   └── tmp_sanity/
+└── src/
+	├── CausalGPT/
+	│   ├── configs/
+	│   │   └── exdbn_perform.yaml
+	│   ├── tests/            # bash helpers + pytest
+	│   ├── utils/            # .anc parsing, dummy assets, vocab tooling, etc.
+	│   ├── constrained_nanochat.py
+	│   ├── data.py
+	│   ├── exdbn_ban_edges.py
+	│   ├── model.py
+	│   ├── plot.py
+	│   └── run_exdbn_to_nanochat.py
+	└── reports/              # additional reports (used by some scripts)
+		└── causalgpt_runs_codiet/
+
+
+Key entrypoints:
+
+- `src/CausalGPT/tests/ExDBN_perform.py`: main end-to-end runner (EXDBN → constraints → DNN → outputs)
+- `src/CausalGPT/exdbn_ban_edges.py`: EXDBN call + constraint writer utilities
+- `src/CausalGPT/utils/dnn_constraints_utils.py`: DNN stage (nanoGPT-style transformer) + `.anc` parser
+- `src/CausalGPT/run_exdbn_to_nanochat.py`: helper to run EXDBN priors into a constrained nanochat generator and write a hard `.anc`
 
 ## Quickstart (macOS)
 
@@ -301,9 +273,4 @@ The nanochat scripts write under `NANOCHAT_BASE_DIR` (default in our scripts: `~
 
 You can override with `export NANOCHAT_BASE_DIR=/some/path` before running the scripts.
 
-## Repo map
 
-- `src/CausalGPT/tests/ExDBN_perform.py`: main end-to-end runner (EXDBN → constraints → DNN → outputs)
-- `src/CausalGPT/exdbn_ban_edges.py`: EXDBN call + constraint writer utilities
-- `src/CausalGPT/utils/dnn_constraints_utils.py`: DNN stage (nanoGPT-style transformer) + `.anc` parser
-- `src/CausalGPT/run_exdbn_to_nanochat.py`: helper to run EXDBN priors into a constrained nanochat generator and write a hard `.anc`
