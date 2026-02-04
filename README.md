@@ -16,37 +16,37 @@ This is the actual repo structure (high-level) as it exists in this workspace:
 
 ```txt
 ExDBN-DNN/
-├── AGENTS.md
+├── .gitignore
 ├── LICENSE
 ├── README.md
 ├── pyproject.toml
 ├── requirements.txt
 ├── uv.lock
-├── .gitignore
-├── .python-version
-├── .venv/                    # local virtualenv (optional)
-├── .pytest_cache/            # local pytest cache (optional)
-├── reports/                  # outputs + helper artifacts
-│   ├── causalgpt_runs_codiet/
+├── reports/                  # tracked sample outputs + artifacts
+│   ├── .gitkeep
 │   ├── figures/
-│   └── tmp_sanity/
+│   │   └── .gitkeep
+│   ├── tmp_sanity/
+│   └── causalgpt_runs_codiet/
 └── src/
-	├── CausalGPT/
-	│   ├── configs/
-	│   │   └── exdbn_perform.yaml
-	│   ├── tests/            # bash helpers + pytest
-	│   ├── utils/            # .anc parsing, dummy assets, vocab tooling, etc.
-	│   ├── constrained_nanochat.py
-	│   ├── data.py
-	│   ├── exdbn_ban_edges.py
-	│   ├── model.py
-	│   ├── plot.py
-	│   └── run_exdbn_to_nanochat.py
-	└── reports/              # additional reports (used by some scripts)
-		└── causalgpt_runs_codiet/
+	└── CausalGPT/
+		├── __init__.py
+		├── configs/
+		│   └── exdbn_perform.yaml
+		├── tests/            # bash helpers + pytest
+		├── utils/            # .anc parsing, dummy assets, vocab tooling, etc.
+		├── constrained_nanochat.py
+		├── data.py
+		├── draw_pic_pydot.py
+		├── exdbn_ban_edges.py
+		├── model.py
+		├── perform_CausalGPT.sh
+		├── plot.py
+		├── pyproject.toml
+		└── run_exdbn_to_nanochat.py
+```
 
-
-Key entrypoints:
+### Key entrypoints
 
 - `src/CausalGPT/tests/ExDBN_perform.py`: main end-to-end runner (EXDBN → constraints → DNN → outputs)
 - `src/CausalGPT/exdbn_ban_edges.py`: EXDBN call + constraint writer utilities
@@ -87,7 +87,7 @@ bash tests/Test_codiet.sh
 
 This script drives `tests/ExDBN_perform.py` against `codiet_302_*.csv` replicates.
 
-## 运行指南 (step-by-step)
+## Run guide (step-by-step)
 
 Below is a more explicit “checklist-style” guide (useful if you want to run individual pieces).
 
