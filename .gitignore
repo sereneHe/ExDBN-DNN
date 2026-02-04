@@ -106,6 +106,13 @@ ipython_config.py
 #   intended to run in multiple environments; otherwise, check them in:
 # .python-version
 
+# Repo-local files to keep out of GitHub
+AGENTS.md
+.python-version
+src/CausalGPT/uv.lock
+src/CausalGPT/configs/.gitkeep
+src/CausalGPT/configs/.pre-commit-config.yaml
+
 # pipenv
 #   According to pypa/pipenv#598, it is recommended to include Pipfile.lock in version control.
 #   However, in case of collaboration, if having platform-specific dependencies or dependencies
